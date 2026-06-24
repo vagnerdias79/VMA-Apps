@@ -190,7 +190,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
     <div class="fg">
       <div class="field"><label>Data</label><input type="date" id="data"></div>
       <div class="field"><label>Ajudante?</label>
-        <select id="ajudante"><option value="nao">Não</option><option value="sim">Sim (R$ 99,00)</option></select>
+        <select id="ajudante"><option value="nao">Não</option><option value="sim">Sim</option></select>
       </div>
     </div>
     <div class="field">
@@ -203,16 +203,9 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
       <input type="text" id="destino" placeholder="Ex: Campinas, Americana, Piracicaba...">
     </div>
     <div class="field">
-      <label>KM total estimado (ida e volta ao CD)</label>
-      <input type="number" id="kmEstimado" placeholder="Ex: 280" oninput="calcFreteMeli()">
-      <div class="hint">Meli considera saída e chegada no CD Sumaré</div>
-    </div>
-    <div id="freteCalculado" style="display:none" class="alerta blue">
-      <span>🧾</span>
-      <div>
-        <strong id="freteValor">—</strong>
-        <div id="freteDesc" style="font-size:11px;margin-top:2px"></div>
-      </div>
+      <label>KM estimado da rota (ida e volta ao CD)</label>
+      <input type="number" id="kmEstimado" placeholder="Ex: 280">
+      <div class="hint">Informe a distância total estimada da rota de hoje</div>
     </div>
   </div>
   <button class="btn btn-primary" onclick="goSec(1)">Próximo — Pedágios →</button>
@@ -863,57 +856,38 @@ function calcResumo(){
   var totalComb=state.combustiveis.reduce(function(s,c){return s+c.valor;},0);
   var totalOutros=state.outros.reduce(function(s,o){return s+o.valor;},0);
   var totalLitros=state.combustiveis.reduce(function(s,c){return s+c.litros;},0);
-  var freteMeli=calcFretePorKm(kmEst||kmRodado);
-  var ajudante=temAjudante?AJUDANTE_VALOR:0;
-  var receita=freteMeli+(temAjudante?AJUDANTE_VALOR:0);
-  var totalDesp=totalPed+totalComb+totalOutros;
-  var resultado=receita-totalDesp;
-  var meu=resultado*0.60;
-  var motoristaParte=resultado*0.40;
   var kmL=totalLitros&&kmRodado?kmRodado/totalLitros:0;
-  var custKm=kmRodado?totalComb/kmRodado:0;
+  var custKm=kmRodado&&totalComb?totalComb/kmRodado:0;
   var pedNaoIdent=state.pedagogios.filter(function(p){return p.placaOk==='nao';});
-  var infracao=document.getElementById('infracao').value;
-  var fR=function(v){return 'R$ '+v.toFixed(2).replace('.',',');};
+  var fR=function(v){return 'R$ '+(parseFloat(v)||0).toFixed(2).replace('.',',');};
   var h='';
-  if(pedNaoIdent.length) h+='<div class="alerta red">⚠️ <div><strong>'+pedNaoIdent.length+' pedágio(s) sem placa identificada</strong><span>Verificar reembolso com Meli</span></div></div>';
+  if(pedNaoIdent.length) h+='<div class="alerta red">⚠️ <div><strong>'+pedNaoIdent.length+' pedágio(s) sem placa identificada</strong><span>Verificar com Meli</span></div></div>';
   h+='<div class="sum-row"><span class="sum-label">📍 Destino</span><span class="sum-val">'+document.getElementById('destino').value+'</span></div>';
-  if(kmRodado>0)h+='<div class="sum-row"><span class="sum-label">🚗 KM rodados</span><span class="sum-val blue">'+kmRodado.toLocaleString()+' km</span></div>';
-  if(kmEst)h+='<div class="sum-row"><span class="sum-label">📋 KM p/ Meli</span><span class="sum-val">'+kmEst.toLocaleString()+' km</span></div>';
-  if(document.getElementById('pacotes').value)h+='<div class="sum-row"><span class="sum-label">📦 Pacotes coletados</span><span class="sum-val">'+document.getElementById('pacotes').value+'</span></div>';
+  if(kmRodado>0) h+='<div class="sum-row"><span class="sum-label">🚗 KM rodados</span><span class="sum-val blue">'+kmRodado.toLocaleString()+' km</span></div>';
+  if(kmEst) h+='<div class="sum-row"><span class="sum-label">📋 KM estimado</span><span class="sum-val">'+kmEst.toLocaleString()+' km</span></div>';
+  if(document.getElementById('pacotes').value) h+='<div class="sum-row"><span class="sum-label">📦 Pacotes coletados</span><span class="sum-val">'+document.getElementById('pacotes').value+'</span></div>';
+  h+='<div class="sum-row"><span class="sum-label">👤 Ajudante</span><span class="sum-val">'+(temAjudante?'Sim':'Não')+'</span></div>';
   h+='<hr style="border:none;border-top:1px solid var(--border);margin:10px 0">';
-  h+='<div style="font-size:10px;color:var(--blue);font-weight:800;text-transform:uppercase;margin-bottom:8px">Receita</div>';
-  h+='<div class="sum-row"><span class="sum-label">Frete Meli ('+kmEst+' km)</span><span class="sum-val pos">'+fR(freteMeli)+'</span></div>';
-  if(temAjudante)h+='<div class="sum-row"><span class="sum-label">Ajudante Meli</span><span class="sum-val pos">'+fR(AJUDANTE_VALOR)+'</span></div>';
-  h+='<div class="sum-row"><span class="sum-label"><strong>Total receita</strong></span><span class="sum-val pos"><strong>'+fR(receita)+'</strong></span></div>';
-  h+='<hr style="border:none;border-top:1px solid var(--border);margin:10px 0">';
-  h+='<div style="font-size:10px;color:var(--red);font-weight:800;text-transform:uppercase;margin-bottom:8px">Despesas</div>';
-  h+='<div class="sum-row"><span class="sum-label">⛽ Combustível</span><span class="sum-val neg">'+fR(totalComb)+'</span></div>';
-  h+='<div class="sum-row"><span class="sum-label">🛣️ Pedágios ('+state.pedagogios.length+')</span><span class="sum-val neg">'+fR(totalPed)+'</span></div>';
-  if(totalOutros)h+='<div class="sum-row"><span class="sum-label">🔧 Outros</span><span class="sum-val neg">'+fR(totalOutros)+'</span></div>';
-  h+='<div class="sum-row"><span class="sum-label"><strong>Total despesas</strong></span><span class="sum-val neg"><strong>'+fR(totalDesp)+'</strong></span></div>';
-  h+='<hr style="border:none;border-top:1px solid var(--border);margin:10px 0">';
-  var cls=resultado>=0?'lucro':'prejuizo';
-  h+='<div class="resultado-box '+cls+'"><div class="rl">Resultado do dia</div><div class="rv" style="color:'+(resultado>=0?'var(--green)':'var(--red)')+'">'+fR(resultado)+'</div></div>';
-  h+='<div class="sum-row"><span class="sum-label">🏠 Vagner (60%)</span><span class="sum-val pos">'+fR(meu)+'</span></div>';
-  h+='<div class="sum-row"><span class="sum-label">🚗 Motorista (40%)</span><span class="sum-val pos">'+fR(motoristaParte)+'</span></div>';
+  h+='<div style="font-size:10px;color:var(--blue);font-weight:800;text-transform:uppercase;margin-bottom:8px">Gastos operacionais</div>';
+  h+='<div class="sum-row"><span class="sum-label">⛽ Combustível</span><span class="sum-val">'+fR(totalComb)+'</span></div>';
+  h+='<div class="sum-row"><span class="sum-label">🛣️ Pedágios ('+state.pedagogios.length+')</span><span class="sum-val">'+fR(totalPed)+'</span></div>';
+  if(totalOutros) h+='<div class="sum-row"><span class="sum-label">🔧 Outros</span><span class="sum-val">'+fR(totalOutros)+'</span></div>';
   if(kmL>0||custKm>0){
     h+='<hr style="border:none;border-top:1px solid var(--border);margin:10px 0">';
     h+='<div style="font-size:10px;color:var(--blue);font-weight:800;text-transform:uppercase;margin-bottom:8px">Eficiência</div>';
-    if(kmL>0)h+='<div class="sum-row"><span class="sum-label">⛽ Consumo médio</span><span class="sum-val blue">'+kmL.toFixed(2)+' km/L</span></div>';
-    if(custKm>0)h+='<div class="sum-row"><span class="sum-label">💰 Custo por km</span><span class="sum-val blue">R$ '+custKm.toFixed(3)+'/km</span></div>';
+    if(kmL>0) h+='<div class="sum-row"><span class="sum-label">⛽ Consumo</span><span class="sum-val blue">'+kmL.toFixed(2)+' km/L</span></div>';
+    if(custKm>0) h+='<div class="sum-row"><span class="sum-label">💰 Custo/km</span><span class="sum-val blue">'+fR(custKm)+'/km</span></div>';
   }
-  // Registra infração no score
+  var infracao=document.getElementById('infracao').value;
   if(infracao!=='nao'){
     var mes=new Date().toISOString().slice(0,7);
     state.penalizacoes.push({tipo:infracao,desc:document.getElementById('infracaoDesc').value,data:new Date().toLocaleDateString('pt-BR'),mes:mes});
     saveState();
-    h+='<div class="alerta yellow" style="margin-top:10px">⚠️ <div><strong>Infração registrada no score</strong><span>−'+PENALIZACOES[infracao]+'% no score do mês</span></div></div>';
+    h+='<div class="alerta yellow" style="margin-top:10px">⚠️ <div><strong>Infração registrada no score</strong></div></div>';
   }
   document.getElementById('resumoContent').innerHTML=h;
 }
 
-// ── ENVIAR WHATSAPP ───────────────────────────────────
 function enviarRelatorio(){
   var ini=parseInt(document.getElementById('kmInicial').value)||0;
   var fin=parseInt(document.getElementById('kmFinal').value)||0;
@@ -924,45 +898,65 @@ function enviarRelatorio(){
   var totalComb=state.combustiveis.reduce(function(s,c){return s+c.valor;},0);
   var totalOutros=state.outros.reduce(function(s,o){return s+o.valor;},0);
   var totalLitros=state.combustiveis.reduce(function(s,c){return s+c.litros;},0);
-  var freteMeli=calcFretePorKm(kmEst||kmRodado);
-  var ajudante=temAjudante?AJUDANTE_VALOR:0;
-  var receita=freteMeli+ajudante;
-  var totalDesp=totalPed+totalComb+totalOutros;
-  var resultado=receita-totalDesp;
   var kmL=totalLitros&&kmRodado?kmRodado/totalLitros:0;
-  var fR=function(v){return 'R$ '+v.toFixed(2).replace('.',',');};
+  var custKm=kmRodado&&totalComb?totalComb/kmRodado:0;
+  var fR=function(v){return 'R$ '+(parseFloat(v)||0).toFixed(2).replace('.',',');};
   var nl='\n';
-  var msg='*VMA LOGISTICA - RELATORIO DIARIO*'+nl;
-  msg+='Placa: GFB0F57 | '+document.getElementById('data').value+nl+nl;
+  var pedNao=state.pedagogios.filter(function(p){return p.placaOk==='nao';});
+
+  // WhatsApp — apenas operacional
+  var msg='*VMA LOGISTICA - RELATORIO DO DIA*'+nl;
+  msg+='Data: '+document.getElementById('data').value+nl;
+  msg+='Placa: GFB0F57'+nl+nl;
+  msg+='*OPERACAO*'+nl;
   msg+='Destino: '+document.getElementById('destino').value+nl;
-  if(kmRodado>0)msg+='KM rodados: '+kmRodado.toLocaleString()+nl;
-  if(kmEst)msg+='KM Meli: '+kmEst.toLocaleString()+nl;
-  if(document.getElementById('pacotes').value)msg+='Pacotes: '+document.getElementById('pacotes').value+nl;
-  msg+=nl+'*RECEITA*'+nl;
-  msg+='Frete Meli ('+kmEst+' km): '+fR(freteMeli)+nl;
-  if(temAjudante)msg+='Ajudante: '+fR(AJUDANTE_VALOR)+nl;
-  msg+='Total: '+fR(receita)+nl;
-  msg+=nl+'*DESPESAS*'+nl;
+  if(kmRodado>0) msg+='KM rodados: '+kmRodado.toLocaleString()+' km'+nl;
+  if(kmEst) msg+='KM estimado rota: '+kmEst.toLocaleString()+' km'+nl;
+  if(document.getElementById('pacotes').value) msg+='Pacotes coletados: '+document.getElementById('pacotes').value+nl;
+  msg+='Ajudante: '+(temAjudante?'Sim':'Nao')+nl+nl;
+  msg+='*GASTOS*'+nl;
   msg+='Combustivel: '+fR(totalComb)+nl;
   msg+='Pedagios ('+state.pedagogios.length+'): '+fR(totalPed)+nl;
-  if(totalOutros)msg+='Outros: '+fR(totalOutros)+nl;
-  msg+='Total: '+fR(totalDesp)+nl;
-  msg+=nl+'*RESULTADO: '+fR(resultado)+'*'+nl;
-  msg+='Vagner (60%): '+fR(resultado*0.60)+nl;
-  msg+='Motorista (40%): '+fR(resultado*0.40)+nl;
-  if(kmL>0)msg+=nl+'Consumo: '+kmL.toFixed(2)+' km/L'+nl;
-  var pedNao=state.pedagogios.filter(function(p){return p.placaOk==='nao';});
-  if(pedNao.length)msg+=nl+'ATENCAO: '+pedNao.length+' pedagio(s) sem placa!'+nl;
-  if(document.getElementById('obsGeral').value)msg+=nl+'Obs: '+document.getElementById('obsGeral').value;
-  var payload={data:document.getElementById('data').value,motorista:'Motorista',ajudante:document.getElementById('ajudante').value,destino:document.getElementById('destino').value,kmEstimado:kmEst,kmRodado:kmRodado,freteMeli:freteMeli,totalComb:totalComb,totalPed:totalPed,totalOutros:totalOutros,totalDesp:totalDesp,resultado:resultado,vagner60:resultado*0.60,motorista40:resultado*0.40,totalLitros:totalLitros,consumoKmL:kmL,custoPorKm:kmRodado?totalComb/kmRodado:0,pacotes:parseInt(document.getElementById('pacotes').value)||0,pedSemPlaca:pedNao.length,infracao:document.getElementById('infracao').value,obs:document.getElementById('obsGeral').value};
-  try{fetch('https://script.google.com/macros/s/AKfycbwDwnDgNqGHOq54n09VwhDalJ5S_ULSmVwmeTRs8ZslpWG6SATr7Lxm8UoKl7kisjE/exec',{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});}catch(e){}
+  if(totalOutros) msg+='Outros: '+fR(totalOutros)+nl;
+  if(kmL>0) msg+=nl+'Consumo: '+kmL.toFixed(2)+' km/L'+nl;
+  if(pedNao.length) msg+=nl+'ATENCAO: '+pedNao.length+' pedagio(s) sem placa identificada!'+nl;
+  if(document.getElementById('obsGeral').value) msg+=nl+'Obs: '+document.getElementById('obsGeral').value;
+
+  // Google Sheets — envia tudo (financeiro calculado pelo gestor)
+  var payload={
+    data:document.getElementById('data').value,
+    motorista:'Motorista',
+    ajudante:document.getElementById('ajudante').value,
+    destino:document.getElementById('destino').value,
+    kmEstimado:kmEst,
+    kmRodado:kmRodado,
+    totalComb:totalComb,
+    totalPed:totalPed,
+    totalOutros:totalOutros,
+    totalLitros:totalLitros,
+    consumoKmL:kmL,
+    custoPorKm:custKm,
+    pacotes:parseInt(document.getElementById('pacotes').value)||0,
+    pedSemPlaca:pedNao.length,
+    infracao:document.getElementById('infracao').value,
+    obs:document.getElementById('obsGeral').value,
+    pedagogios:JSON.stringify(state.pedagogios.map(function(p){return {valor:p.valor,hora:p.hora,placaOk:p.placaOk};}))
+  };
+  try{
+    fetch('https://script.google.com/macros/s/AKfycbwDwnDgNqGHOq54n09VwhDalJ5S_ULSmVwmeTRs8ZslpWG6SATr7Lxm8UoKl7kisjE/exec',{
+      method:'POST',mode:'no-cors',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+  }catch(e){}
+
   state.pedagogios=[]; state.combustiveis=[]; state.outros=[];
   saveState();
-    window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
-  toast('✅ Relatório enviado!');
+  window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+  toast('Relatorio enviado!');
 }
 
-// ── NAVEGAÇÃO ────────────────────────────────────────
+
 function goSec(n){
   document.querySelectorAll('.sec').forEach(function(s){s.classList.remove('on');});
   document.querySelectorAll('.step').forEach(function(s,i){s.classList.remove('on');if(i<n)s.classList.add('done');else s.classList.remove('done');});
