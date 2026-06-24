@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VMA — Gestão Meli</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--blue:#1a6ef5;--blue2:#0d4fd4;--blue3:#e8f0ff;--green:#16a34a;--red:#dc2626;--yellow:#d97706;--bg:#f0f4ff;--card:#fff;--card2:#f5f8ff;--border:#dde4f5;--text:#1a2035;--text2:#64748b;--text3:#94a3b8;--shadow:0 2px 12px rgba(26,110,245,.08)}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+.hdr{background:#fff;border-bottom:2px solid var(--blue3);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow);position:sticky;top:0;z-index:10}
+.hdr img{height:38px}
+.hdr-right{display:flex;align-items:center;gap:10px}
+.hdr-right .placa{background:var(--blue);color:#fff;font-size:11px;font-weight:800;padding:4px 12px;border-radius:6px;letter-spacing:.1em}
+.btn-refresh{background:var(--blue3);border:1.5px solid var(--blue);color:var(--blue);font-size:12px;font-weight:700;padding:6px 14px;border-radius:8px;cursor:pointer;font-family:inherit}
+.btn-refresh:hover{background:var(--blue);color:#fff}
+.tabs{display:flex;background:#fff;border-bottom:1px solid var(--border);padding:0 24px;overflow-x:auto}
+.tab{padding:12px 18px;font-size:13px;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;font-weight:600}
+.tab.on{color:var(--blue);border-bottom-color:var(--blue)}
+.pg{display:none;padding:24px;max-width:1400px;margin:0 auto}.pg.on{display:block}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+.card-title{font-size:11px;color:var(--blue);text-transform:uppercase;letter-spacing:.1em;font-weight:800;margin-bottom:14px}
+.lbl{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;font-weight:700}
+.val{font-size:24px;font-weight:800;letter-spacing:-.5px}
+.val2{font-size:13px;color:var(--text2);margin-top:3px}
+.pos{color:var(--green)}.neg{color:var(--red)}.blue{color:var(--blue)}
+.tw{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:auto;margin-bottom:16px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:var(--card2);color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:.04em;padding:10px 14px;text-align:left;white-space:nowrap;font-weight:700}
+td{padding:10px 14px;border-top:1px solid var(--border);vertical-align:middle}
+tr:hover td{background:var(--blue3)}
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:3px 8px;border-radius:5px;font-weight:700}
+.badge.ok{background:#dcfce7;color:var(--green)}
+.badge.err{background:#fee2e2;color:var(--red)}
+.badge.warn{background:#fef9c3;color:var(--yellow)}
+.alerta{border-radius:10px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:flex-start;gap:10px;font-size:12px}
+.alerta.red{background:#fee2e2;border:1px solid #fca5a5;color:#991b1b}
+.alerta.yellow{background:#fef9c3;border:1px solid #fde047;color:#713f12}
+.alerta.blue{background:var(--blue3);border:1px solid #93c5fd;color:#1e3a8a}
+.score-circle{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;color:#fff;margin:0 auto 8px;flex-shrink:0}
+.filt{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.filt select,.filt input{background:var(--card);border:1.5px solid var(--border);color:var(--text);padding:8px 12px;border-radius:8px;font-size:13px;font-family:inherit;outline:none}
+.filt select:focus,.filt input:focus{border-color:var(--blue)}
+.btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:700;border:none;cursor:pointer;font-family:inherit}
+.btn-blue{background:var(--blue);color:#fff}
+.btn-green{background:var(--green);color:#fff}
+.btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--text2)}
+.quinzena-box{background:linear-gradient(135deg,var(--blue),var(--blue2));border-radius:14px;padding:20px;color:#fff;margin-bottom:16px}
+.quinzena-box h3{font-size:14px;font-weight:800;margin-bottom:12px;opacity:.9}
+.quinzena-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.quinzena-item{background:rgba(255,255,255,.15);border-radius:10px;padding:12px;text-align:center}
+.quinzena-item .qi-label{font-size:10px;opacity:.8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.quinzena-item .qi-val{font-size:18px;font-weight:800}
+.loading{text-align:center;padding:40px;color:var(--text2);font-size:14px}
+.spin{display:inline-block;width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;margin-right:8px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:900px){.grid4{grid-template-columns:1fr 1fr}.grid3{grid-template-columns:1fr}.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <img src="data:image/png;base64,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" alt="VMA">
+  <div class="hdr-right">
+    <span class="placa">GFB0F57</span>
+    <button class="btn-refresh" onclick="carregarDados()">↻ Atualizar</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab on" onclick="showPg('visao',this)">Visão Geral</div>
+  <div class="tab" onclick="showPg('diario',this)">Diário</div>
+  <div class="tab" onclick="showPg('quinzena',this)">Quinzenal</div>
+  <div class="tab" onclick="showPg('eficiencia',this)">Eficiência</div>
+  <div class="tab" onclick="showPg('manutencao',this)">Manutenção</div>
+  <div class="tab" onclick="showPg('conferencia',this)">Conferência Meli</div>
+</div>
+
+<!-- VISÃO GERAL -->
+<div class="pg on" id="pg-visao">
+  <div id="alertasGestor"></div>
+  <div class="grid4" id="cardsVisao">
+    <div class="card"><div class="lbl">Carregando...</div><div class="val">—</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Resultado dos últimos 15 dias</div>
+      <div id="graficoResult"><div class="loading"><span class="spin"></span>Carregando...</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Score do motorista — mês atual</div>
+      <div id="scoreVisao"><div class="loading"><span class="spin"></span>Carregando...</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Últimas operações</div>
+    <div id="ultimasOps"><div class="loading"><span class="spin"></span>Carregando...</div></div>
+  </div>
+</div>
+
+<!-- DIÁRIO -->
+<div class="pg" id="pg-diario">
+  <div class="filt">
+    <select id="filtMes" onchange="renderDiario()">
+      <option value="">Todos os meses</option>
+    </select>
+    <input type="text" id="filtBusca" placeholder="Buscar destino..." oninput="renderDiario()" style="width:180px">
+    <button class="btn btn-blue" onclick="exportarCSV()">↓ Exportar CSV</button>
+  </div>
+  <div class="tw" id="tabelaDiario">
+    <div class="loading"><span class="spin"></span>Carregando...</div>
+  </div>
+  <div id="totalDiario" style="font-size:12px;color:var(--text2);margin-top:6px"></div>
+</div>
+
+<!-- QUINZENAL -->
+<div class="pg" id="pg-quinzena">
+  <div class="filt">
+    <select id="filtQuinzena" onchange="renderQuinzena()">
+      <option value="">Selecione o período</option>
+    </select>
+  </div>
+  <div id="conteudoQuinzena"><div class="loading"><span class="spin"></span>Carregando...</div></div>
+</div>
+
+<!-- EFICIÊNCIA -->
+<div class="pg" id="pg-eficiencia">
+  <div class="grid3" id="cardsEfic"></div>
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title">Evolução do consumo km/L</div>
+    <div id="evolucaoConsumo"><div class="loading"><span class="spin"></span>Carregando...</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Score de eficiência — histórico</div>
+    <div id="scoreHistorico"></div>
+  </div>
+</div>
+
+<!-- MANUTENÇÃO -->
+<div class="pg" id="pg-manutencao">
+  <div id="alertasManutGestor" style="margin-bottom:16px"></div>
+  <div class="card">
+    <div class="card-title">Próximas manutenções programadas</div>
+    <div id="proximasManut"></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <div class="card-title">Custos de manutenção no período</div>
+    <div id="custosManut"></div>
+  </div>
+</div>
+
+<!-- CONFERÊNCIA MELI -->
+<div class="pg" id="pg-conferencia">
+  <div class="filt">
+    <select id="filtConfQuinzena" onchange="renderConferencia()">
+      <option value="">Selecione o período</option>
+    </select>
+  </div>
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title">📋 Guia de conferência com planilha Meli</div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.8">
+      <p>1. Abra o PDF/planilha recebido do Meli</p>
+      <p>2. Compare o <strong>Total</strong> de cada dia com a coluna <strong>Frete Meli</strong> abaixo</p>
+      <p>3. Verifique se pedágios sem placa identificada foram reembolsados</p>
+      <p>4. Confirme o valor do ajudante quando houver</p>
+    </div>
+  </div>
+  <div id="tabelaConferencia"><div class="loading"><span class="spin"></span>Carregando...</div></div>
+  <div id="resumoConferencia" style="margin-top:12px"></div>
+</div>
+
+<script>
+var SCRIPT_URL =  + SCRIPT_URL + ;
+var dados = [];
+var fR = function(v){ return 'R$ '+(parseFloat(v)||0).toFixed(2).replace('.',','); };
+var fN = function(v){ return (parseFloat(v)||0).toFixed(2); };
+
+function showPg(id,el){
+  document.querySelectorAll('.pg').forEach(function(p){p.classList.remove('on');});
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on');});
+  document.getElementById('pg-'+id).classList.add('on');
+  el.classList.add('on');
+  if(id==='diario') renderDiario();
+  if(id==='quinzena') renderQuinzena();
+  if(id==='eficiencia') renderEficiencia();
+  if(id==='conferencia') renderConferencia();
+  if(id==='manutencao') renderManutencao();
+}
+
+async function carregarDados(){
+  try{
+    var r = await fetch(SCRIPT_URL+'?t='+Date.now());
+    var d = await r.json();
+    if(d.status==='ok'){
+      dados = d.data || [];
+      renderVisaoGeral();
+      preencherFiltros();
+    }
+  } catch(e){ console.log('Erro ao carregar:', e); }
+}
+
+function preencherFiltros(){
+  var meses = [...new Set(dados.map(function(d){return d.Data?String(d.Data).slice(0,7):'';}))].filter(Boolean).sort().reverse();
+  ['filtMes'].forEach(function(id){
+    var sel = document.getElementById(id);
+    if(!sel) return;
+    var cur = sel.value;
+    sel.innerHTML = '<option value="">Todos</option>'+meses.map(function(m){return '<option value="'+m+'"'+(m===cur?' selected':'')+'>'+m+'</option>';}).join('');
+  });
+  // Quinzenas
+  var quinzenas = [];
+  dados.forEach(function(d){
+    if(!d.Data) return;
+    var data = new Date(d.Data);
+    var ano = data.getFullYear();
+    var mes = String(data.getMonth()+1).padStart(2,'0');
+    var q = data.getDate()<=15 ? '1Q' : '2Q';
+    var key = ano+'-'+mes+'-'+q;
+    var label = (q==='1Q'?'1ª':'2ª')+' quinzena '+mes+'/'+ano+' → pag. '+(q==='1Q'?'dia 10':'dia 25');
+    if(!quinzenas.find(function(x){return x.key===key;})) quinzenas.push({key:key,label:label});
+  });
+  quinzenas.sort(function(a,b){return b.key.localeCompare(a.key);});
+  ['filtQuinzena','filtConfQuinzena'].forEach(function(id){
+    var sel = document.getElementById(id);
+    if(!sel) return;
+    sel.innerHTML = '<option value="">Selecione</option>'+quinzenas.map(function(q){return '<option value="'+q.key+'">'+q.label+'</option>';}).join('');
+    if(quinzenas.length) sel.value = quinzenas[0].key;
+  });
+}
+
+function renderVisaoGeral(){
+  var tot = calcTotais(dados);
+  var mes = new Date().toISOString().slice(0,7);
+  var dadosMes = dados.filter(function(d){return String(d.Data||'').startsWith(mes);});
+  var totMes = calcTotais(dadosMes);
+  var alertas = '';
+  var pedProb = dados.filter(function(d){return parseInt(d.Ped_Sem_Placa||0)>0;});
+  if(pedProb.length) alertas += '<div class="alerta red">⚠️ <div><strong>'+pedProb.length+' dia(s) com pedágio sem placa identificada</strong> — verificar reembolso Meli</div></div>';
+  document.getElementById('alertasGestor').innerHTML = alertas;
+  document.getElementById('cardsVisao').innerHTML =
+    '<div class="card"><div class="lbl">Receita total (mês)</div><div class="val pos">'+fR(totMes.receita)+'</div><div class="val2">'+dadosMes.length+' dias operados</div></div>'+
+    '<div class="card"><div class="lbl">Despesas (mês)</div><div class="val neg">'+fR(totMes.desp)+'</div><div class="val2">Comb+Ped+Outros</div></div>'+
+    '<div class="card"><div class="lbl">Resultado líquido (mês)</div><div class="val '+(totMes.result>=0?'pos':'neg')+'">'+fR(totMes.result)+'</div><div class="val2">Sua parte: '+fR(totMes.result*0.6)+'</div></div>'+
+    '<div class="card"><div class="lbl">KM rodados (mês)</div><div class="val blue">'+Math.round(totMes.km).toLocaleString()+'</div><div class="val2">km</div></div>';
+  // Últimas ops
+  var ult = dados.slice().reverse().slice(0,8);
+  var h='<table><thead><tr><th>Data</th><th>Destino</th><th>KM</th><th>Frete Meli</th><th>Despesas</th><th>Resultado</th><th>60% Você</th><th>Consumo</th></tr></thead><tbody>';
+  ult.forEach(function(d){
+    var res = parseFloat(d.Resultado||0);
+    h+='<tr><td style="white-space:nowrap">'+d.Data+'</td><td>'+d.Destino+'</td><td>'+d.KM_Rodado+'</td>';
+    h+='<td class="pos">'+fR(d.Frete_Meli)+'</td><td class="neg">'+fR(d.Total_Desp)+'</td>';
+    h+='<td class="'+(res>=0?'pos':'neg')+'" style="font-weight:700">'+fR(res)+'</td>';
+    h+='<td class="pos">'+fR(parseFloat(d.Vagner_60||0))+'</td>';
+    h+='<td>'+(d.Consumo_KmL?fN(d.Consumo_KmL)+' km/L':'—')+'</td></tr>';
+  });
+  h+='</tbody></table>';
+  document.getElementById('ultimasOps').innerHTML = ult.length ? h : '<p style="color:var(--text2);text-align:center;padding:20px">Nenhum dado ainda</p>';
+  // Score
+  renderScoreVisao(dadosMes);
+}
+
+function calcTotais(arr){
+  return arr.reduce(function(t,d){
+    t.receita += parseFloat(d.Frete_Meli||0);
+    t.desp += parseFloat(d.Total_Desp||0);
+    t.result += parseFloat(d.Resultado||0);
+    t.km += parseFloat(d.KM_Rodado||0);
+    t.litros += parseFloat(d.Litros||0);
+    t.comb += parseFloat(d.Combustivel||0);
+    return t;
+  },{receita:0,desp:0,result:0,km:0,litros:0,comb:0});
+}
+
+function renderScoreVisao(dadosMes){
+  var infracoes = dadosMes.filter(function(d){return d.Infracao&&d.Infracao!=='nao';});
+  var PENS = {leve:1,media:2,grave:5,gravissima:15,colisao:20,danos:20};
+  var score = 100 - infracoes.reduce(function(s,d){return s+(PENS[d.Infracao]||0);},0);
+  score = Math.max(0,Math.min(100,score));
+  var cor = score>=90?'#16a34a':score>=85?'#d97706':'#dc2626';
+  var bonus = score>=100?500:score>=90?200:score>=85?50:0;
+  var h='<div style="display:flex;align-items:center;gap:16px;margin-bottom:12px">';
+  h+='<div class="score-circle" style="background:'+cor+'">'+score+'%</div>';
+  h+='<div><div style="font-size:13px;font-weight:700;color:'+cor+'">'+( score>=90?'Excelente':score>=85?'Bom':'Precisa melhorar')+'</div>';
+  h+='<div style="font-size:12px;color:var(--text2);margin-top:4px">Bônus do mês: <strong style="color:'+cor+'">'+fR(bonus)+'</strong></div></div></div>';
+  if(infracoes.length){
+    h+='<div style="font-size:11px;color:var(--text2)">Penalizações no mês:</div>';
+    infracoes.forEach(function(d){h+='<div style="font-size:11px;padding:4px 0;border-bottom:1px solid var(--border)">'+d.Data+' — '+(d.Infracao||'')+(d.Obs?' ('+d.Obs+')':'')+'</div>';});
+  } else { h+='<div style="font-size:12px;color:var(--green)">✅ Sem penalizações este mês</div>'; }
+  document.getElementById('scoreVisao').innerHTML=h;
+}
+
+function renderDiario(){
+  var filtMes = document.getElementById('filtMes').value;
+  var busca = (document.getElementById('filtBusca').value||'').toLowerCase();
+  var lista = dados.filter(function(d){
+    if(filtMes && !String(d.Data||'').startsWith(filtMes)) return false;
+    if(busca && !(d.Destino||'').toLowerCase().includes(busca)) return false;
+    return true;
+  }).reverse();
+  if(!lista.length){ document.getElementById('tabelaDiario').innerHTML='<p style="color:var(--text2);text-align:center;padding:30px">Nenhum dado encontrado</p>'; return; }
+  var tot = calcTotais(lista);
+  var h='<table><thead><tr><th>Data</th><th>Destino</th><th>KM Est.</th><th>KM Real</th><th>Ajudante</th><th>Frete Meli</th><th>Combustível</th><th>Pedágios</th><th>Outros</th><th>Total Desp.</th><th>Resultado</th><th>60% Você</th><th>40% Motor.</th><th>Litros</th><th>km/L</th><th>Custo/km</th><th>Pacotes</th><th>Ped s/ Placa</th><th>Infração</th></tr></thead><tbody>';
+  lista.forEach(function(d){
+    var res=parseFloat(d.Resultado||0), pedSP=parseInt(d.Ped_Sem_Placa||0);
+    h+='<tr>';
+    h+='<td style="white-space:nowrap">'+d.Data+'</td><td>'+d.Destino+'</td>';
+    h+='<td>'+d.KM_Est+'</td><td>'+d.KM_Rodado+'</td>';
+    h+='<td>'+(d.Ajudante==='sim'?'<span class="badge ok">Sim</span>':'Não')+'</td>';
+    h+='<td class="pos">'+fR(d.Frete_Meli)+'</td>';
+    h+='<td class="neg">'+fR(d.Combustivel)+'</td>';
+    h+='<td class="neg">'+fR(d.Pedagios)+'</td>';
+    h+='<td class="neg">'+fR(d.Outros)+'</td>';
+    h+='<td class="neg" style="font-weight:700">'+fR(d.Total_Desp)+'</td>';
+    h+='<td class="'+(res>=0?'pos':'neg')+'" style="font-weight:700">'+fR(res)+'</td>';
+    h+='<td class="pos">'+fR(d.Vagner_60)+'</td>';
+    h+='<td>'+fR(d.Motorista_40)+'</td>';
+    h+='<td>'+(d.Litros?fN(d.Litros)+'L':'—')+'</td>';
+    h+='<td>'+(d.Consumo_KmL?fN(d.Consumo_KmL)+' km/L':'—')+'</td>';
+    h+='<td>'+(d.Custo_Km?'R$ '+fN(d.Custo_Km)+'/km':'—')+'</td>';
+    h+='<td>'+(d.Pacotes||'—')+'</td>';
+    h+='<td>'+(pedSP>0?'<span class="badge err">'+pedSP+'</span>':'<span class="badge ok">OK</span>')+'</td>';
+    h+='<td>'+(d.Infracao&&d.Infracao!=='nao'?'<span class="badge warn">'+d.Infracao+'</span>':'—')+'</td>';
+    h+='</tr>';
+  });
+  h+='</tbody><tfoot><tr style="font-weight:700;background:var(--card2)">';
+  h+='<td colspan="5">TOTAIS ('+lista.length+' dias)</td>';
+  h+='<td class="pos">'+fR(tot.receita)+'</td><td class="neg">'+fR(tot.comb)+'</td><td colspan="2"></td>';
+  h+='<td class="neg">'+fR(tot.desp)+'</td>';
+  h+='<td class="'+(tot.result>=0?'pos':'neg')+'">'+fR(tot.result)+'</td>';
+  h+='<td class="pos">'+fR(tot.result*0.6)+'</td><td>'+fR(tot.result*0.4)+'</td>';
+  h+='<td>'+(tot.litros?fN(tot.litros)+'L':'—')+'</td>';
+  h+='<td>'+(tot.km&&tot.litros?(tot.km/tot.litros).toFixed(2)+' km/L':'—')+'</td>';
+  h+='<td colspan="4"></td></tr></tfoot></table>';
+  document.getElementById('tabelaDiario').innerHTML=h;
+  document.getElementById('totalDiario').textContent=lista.length+' registros';
+}
+
+function getQuinzenaRange(key){
+  var parts = key.split('-');
+  var ano=parts[0], mes=parts[1], q=parts[2];
+  var ini = new Date(ano,parseInt(mes)-1,1);
+  var fim = q==='1Q' ? new Date(ano,parseInt(mes)-1,15) : new Date(ano,parseInt(mes),0);
+  return {ini:ini,fim:fim,q:q,mes:mes,ano:ano};
+}
+
+function renderQuinzena(){
+  var key = document.getElementById('filtQuinzena').value;
+  document.getElementById('filtConfQuinzena').value = key;
+  if(!key){ document.getElementById('conteudoQuinzena').innerHTML='<p style="color:var(--text2);text-align:center;padding:30px">Selecione um período</p>'; return; }
+  var rng = getQuinzenaRange(key);
+  var lista = dados.filter(function(d){
+    if(!d.Data) return false;
+    var dt = new Date(d.Data);
+    return dt >= rng.ini && dt <= rng.fim;
+  });
+  var tot = calcTotais(lista);
+  var pagamento = rng.q==='1Q' ? 'dia 10 do mês seguinte' : 'dia 25 do mês seguinte';
+  var h='<div class="quinzena-box">';
+  h+='<h3>'+(rng.q==='1Q'?'1ª':'2ª')+' Quinzena '+rng.mes+'/'+rng.ano+' — Pagamento: '+pagamento+'</h3>';
+  h+='<div class="quinzena-grid">';
+  h+='<div class="quinzena-item"><div class="qi-label">Receita Meli</div><div class="qi-val">'+fR(tot.receita)+'</div></div>';
+  h+='<div class="quinzena-item"><div class="qi-label">Total Despesas</div><div class="qi-val">'+fR(tot.desp)+'</div></div>';
+  h+='<div class="quinzena-item"><div class="qi-label">Resultado</div><div class="qi-val">'+fR(tot.result)+'</div></div>';
+  h+='<div class="quinzena-item"><div class="qi-label">Sua parte (60%)</div><div class="qi-val">'+fR(tot.result*0.6)+'</div></div>';
+  h+='<div class="quinzena-item"><div class="qi-label">Motorista (40%)</div><div class="qi-val">'+fR(tot.result*0.4)+'</div></div>';
+  h+='<div class="quinzena-item"><div class="qi-label">Dias operados</div><div class="qi-val">'+lista.length+'</div></div>';
+  h+='</div></div>';
+  if(!lista.length){ h+='<p style="color:var(--text2);text-align:center;padding:20px">Nenhum dia operado neste período</p>'; document.getElementById('conteudoQuinzena').innerHTML=h; return; }
+  // Tabela detalhada
+  h+='<div class="tw"><table><thead><tr><th>Data</th><th>Destino</th><th>KM</th><th>Frete Meli</th><th>Combustível</th><th>Pedágios</th><th>Outros</th><th>Resultado</th><th>60% Você</th><th>40% Mot.</th></tr></thead><tbody>';
+  lista.forEach(function(d){
+    var res=parseFloat(d.Resultado||0);
+    h+='<tr><td>'+d.Data+'</td><td>'+d.Destino+'</td><td>'+d.KM_Rodado+'</td>';
+    h+='<td class="pos">'+fR(d.Frete_Meli)+'</td><td class="neg">'+fR(d.Combustivel)+'</td>';
+    h+='<td class="neg">'+fR(d.Pedagios)+'</td><td class="neg">'+fR(d.Outros)+'</td>';
+    h+='<td class="'+(res>=0?'pos':'neg')+'" style="font-weight:700">'+fR(res)+'</td>';
+    h+='<td class="pos">'+fR(d.Vagner_60)+'</td><td>'+fR(d.Motorista_40)+'</td></tr>';
+  });
+  h+='</tbody></table></div>';
+  document.getElementById('conteudoQuinzena').innerHTML=h;
+}
+
+function renderConferencia(){
+  var key = document.getElementById('filtConfQuinzena').value;
+  if(!key){ document.getElementById('tabelaConferencia').innerHTML='<p style="color:var(--text2);text-align:center;padding:20px">Selecione um período</p>'; return; }
+  var rng = getQuinzenaRange(key);
+  var lista = dados.filter(function(d){
+    if(!d.Data) return false;
+    var dt = new Date(d.Data);
+    return dt >= rng.ini && dt <= rng.fim;
+  });
+  if(!lista.length){ document.getElementById('tabelaConferencia').innerHTML='<p style="color:var(--text2);text-align:center;padding:20px">Nenhum dado neste período</p>'; return; }
+  var tot = calcTotais(lista);
+  var h='<div class="tw"><table><thead><tr><th>Data</th><th>Destino</th><th>KM Est. (Meli)</th><th>Frete Esperado</th><th>Ajudante</th><th>Total Esperado</th><th>Ped s/ Placa</th><th>Obs. conferência</th></tr></thead><tbody>';
+  lista.forEach(function(d){
+    var pedSP=parseInt(d.Ped_Sem_Placa||0);
+    var ajud = d.Ajudante==='sim' ? 99 : 0;
+    var totalEsp = parseFloat(d.Frete_Meli||0)+ajud;
+    h+='<tr>';
+    h+='<td style="white-space:nowrap">'+d.Data+'</td>';
+    h+='<td>'+d.Destino+'</td>';
+    h+='<td>'+d.KM_Est+' km</td>';
+    h+='<td class="pos">'+fR(d.Frete_Meli)+'</td>';
+    h+='<td>'+(d.Ajudante==='sim'?'<span class="badge ok">R$ 99,00</span>':'—')+'</td>';
+    h+='<td class="pos" style="font-weight:700">'+fR(totalEsp)+'</td>';
+    h+='<td>'+(pedSP>0?'<span class="badge err">⚠️ '+pedSP+' pedágio(s)</span>':'<span class="badge ok">OK</span>')+'</td>';
+    h+='<td><input type="text" placeholder="Anotar divergência..." style="width:180px;background:var(--card2);border:1px solid var(--border);padding:4px 8px;border-radius:6px;font-size:11px;color:var(--text);outline:none"></td>';
+    h+='</tr>';
+  });
+  h+='</tbody><tfoot><tr style="font-weight:700;background:var(--card2)"><td colspan="3">TOTAL ESPERADO DO MELI</td>';
+  h+='<td class="pos">'+fR(tot.receita)+'</td><td></td>';
+  h+='<td class="pos">'+fR(tot.receita)+'</td><td colspan="2"></td></tr></tfoot></table></div>';
+  var ped=lista.filter(function(d){return parseInt(d.Ped_Sem_Placa||0)>0;});
+  var resumo='<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:12px;margin-top:8px">';
+  resumo+='<span>'+lista.length+' dias | Total esperado: <strong class="pos">'+fR(tot.receita)+'</strong></span>';
+  if(ped.length) resumo+='<span style="color:var(--red)">⚠️ '+ped.length+' dia(s) com pedágio sem placa — verificar desconto</span>';
+  resumo+='</div>';
+  document.getElementById('tabelaConferencia').innerHTML=h;
+  document.getElementById('resumoConferencia').innerHTML=resumo;
+}
+
+function renderEficiencia(){
+  if(!dados.length){ document.getElementById('cardsEfic').innerHTML='<p style="color:var(--text2)">Sem dados</p>'; return; }
+  var comConsumo = dados.filter(function(d){return parseFloat(d.Consumo_KmL||0)>0;});
+  var mediaKmL = comConsumo.length ? comConsumo.reduce(function(s,d){return s+parseFloat(d.Consumo_KmL);},0)/comConsumo.length : 0;
+  var mediaCustKm = comConsumo.length ? comConsumo.reduce(function(s,d){return s+parseFloat(d.Custo_Km||0);},0)/comConsumo.length : 0;
+  var tot = calcTotais(dados);
+  document.getElementById('cardsEfic').innerHTML=
+    '<div class="card"><div class="lbl">Consumo médio geral</div><div class="val blue">'+(mediaKmL?mediaKmL.toFixed(2):'—')+'</div><div class="val2">km/L ('+comConsumo.length+' abastecimentos)</div></div>'+
+    '<div class="card"><div class="lbl">Custo médio por km</div><div class="val">'+(mediaCustKm?'R$ '+mediaCustKm.toFixed(3):'—')+'</div><div class="val2">combustível/km rodado</div></div>'+
+    '<div class="card"><div class="lbl">KM total rodado</div><div class="val blue">'+Math.round(tot.km).toLocaleString()+'</div><div class="val2">km | '+fR(tot.comb)+' em combustível</div></div>';
+  // Evolução
+  var h='<table><thead><tr><th>Data</th><th>Destino</th><th>KM Rodado</th><th>Litros</th><th>Consumo km/L</th><th>Custo/km</th><th>Valor litro</th></tr></thead><tbody>';
+  comConsumo.slice().reverse().forEach(function(d){
+    var kmL=parseFloat(d.Consumo_KmL||0);
+    var cor=kmL>=10?'pos':kmL>=8?'blue':'neg';
+    h+='<tr><td>'+d.Data+'</td><td>'+d.Destino+'</td><td>'+d.KM_Rodado+' km</td>';
+    h+='<td>'+(d.Litros?fN(d.Litros)+'L':'—')+'</td>';
+    h+='<td class="'+cor+'" style="font-weight:700">'+kmL.toFixed(2)+' km/L</td>';
+    h+='<td>'+(d.Custo_Km?'R$ '+fN(d.Custo_Km)+'/km':'—')+'</td>';
+    h+='<td>—</td></tr>';
+  });
+  h+='</tbody></table>';
+  document.getElementById('evolucaoConsumo').innerHTML=comConsumo.length?h:'<p style="color:var(--text2);text-align:center;padding:20px">Sem dados de consumo ainda</p>';
+}
+
+function renderManutencao(){
+  document.getElementById('alertasManutGestor').innerHTML='<div class="alerta blue">ℹ️ <div>As manutenções são registradas pelo motorista no app. Os alertas de troca de óleo e rodízio aparecem automaticamente a cada 10.000 km.</div></div>';
+  document.getElementById('proximasManut').innerHTML='<p style="font-size:12px;color:var(--text2);text-align:center;padding:16px">Dados de manutenção são registrados pelo motorista no app</p>';
+  document.getElementById('custosManut').innerHTML='<p style="font-size:12px;color:var(--text2);text-align:center;padding:16px">Em desenvolvimento — será consolidado na próxima versão</p>';
+}
+
+function exportarCSV(){
+  if(!dados.length) return;
+  var headers = Object.keys(dados[0]);
+  var csv = headers.join(';')+'
+';
+  dados.forEach(function(d){ csv += headers.map(function(h){return String(d[h]||'').replace(';',',');}).join(';')+'
+'; });
+  var blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'VMA-Meli-'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
+carregarDados();
+setInterval(carregarDados, 5*60*1000);
+</script>
+</body>
+</html>
