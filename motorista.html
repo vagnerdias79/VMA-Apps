@@ -461,7 +461,7 @@ function mostrarChecklist() {
   clChecked = {};
   var h = '';
   CL_ITEMS.forEach(function(item) {
-    h += '<div class="cl-item" id="clItem_'+item.id+'" onclick="toggleCL(''+item.id+'')">';
+    h += '<div class="cl-item" id="clItem_'+item.id+'" data-action="toggleCL" data-id="'+item.id+'">';
     h += '<div class="cl-check" id="clCheck_'+item.id+'"></div>';
     h += '<div class="cl-text"><strong>'+item.label+'</strong><span>'+item.desc+'</span></div></div>';
   });
@@ -598,30 +598,37 @@ function delPedagio(id) { state.pedagogios=state.pedagogios.filter(function(x){r
 function updPed(id,key,val) { var p=state.pedagogios.find(function(x){return x.id===id;}); if(p) p[key]=key==='valor'?parseFloat(val)||0:val; }
 
 function renderPedagogios() {
-  var h = '';
-  if (!state.pedagogios.length) { document.getElementById('pedagogiosList').innerHTML='<p style="font-size:12px;color:var(--text2);text-align:center;padding:12px">Nenhum pedágio</p>'; return; }
-  state.pedagogios.forEach(function(p,i) {
-    h += '<div class="item-box" id="pi_'+p.id+'">';
-    h += '<div class="item-box-title">Pedágio '+(i+1)+'</div>';
-    h += '<button class="del-btn" onclick="delPedagio(''+p.id+'')">✕</button>';
+  var container = document.getElementById('pedagogiosList');
+  if (!state.pedagogios.length) { container.innerHTML='<p style="font-size:12px;color:var(--text2);text-align:center;padding:12px">Nenhum pedágio</p>'; return; }
+  container.innerHTML = '';
+  state.pedagogios.forEach(function(p, i) {
+    var div = document.createElement('div');
+    div.className = 'item-box';
+    div.id = 'pi_' + p.id;
+    var inner = '<div class="item-box-title">Pedágio '+(i+1)+'</div>';
+    inner += '<button class="del-btn" data-action="delPed" data-id="'+p.id+'">✕</button>';
     if (p.fotoUrl) {
-      h += '<img src="'+p.fotoUrl+'" style="width:100%;max-height:130px;object-fit:cover;border-radius:8px;margin-bottom:10px">';
-      h += '<div class="fg" style="margin-bottom:8px">';
-      h += '<div class="field" style="margin:0"><label>Valor R$</label><input type="number" value="'+(p.valor||'')+'" onchange="updPed(''+p.id+'','valor',this.value)" step="0.01" style="width:100%;background:var(--bg);border:1.5px solid var(--border);color:var(--text);padding:10px;border-radius:8px;font-size:13px;outline:none"></div>';
-      h += '<div class="field" style="margin:0"><label>Hora</label><input type="time" value="'+(p.hora||'')+'" onchange="updPed(''+p.id+'','hora',this.value)" style="width:100%;background:var(--bg);border:1.5px solid var(--border);color:var(--text);padding:10px;border-radius:8px;font-size:13px;outline:none"></div>';
-      h += '</div>';
-      h += '<div class="field" style="margin:0"><label>Placa identificada no recibo?</label><select onchange="updPed(''+p.id+'','placaOk',this.value)" style="width:100%;background:var(--bg);border:1.5px solid var(--border);color:var(--text);padding:10px;border-radius:8px;font-size:13px;outline:none;-webkit-appearance:none;appearance:none">';
-      h += '<option value="">Verificar...</option><option value="sim"'+(p.placaOk==='sim'?' selected':'')+'>✅ Sim — placa identificada</option><option value="nao"'+(p.placaOk==='nao'?' selected':'')+'>❌ Não — verificar com Meli</option></select>';
-      if (p.placaOk==='nao') h += '<div style="font-size:11px;color:var(--red);margin-top:5px;font-weight:600">⚠️ Meli pode não reembolsar este pedágio!</div>';
-      h += '</div>';
+      inner += '<img src="'+p.fotoUrl+'" style="width:100%;max-height:130px;object-fit:cover;border-radius:8px;margin-bottom:10px">';
+      inner += '<div class="fg" style="margin-bottom:8px">';
+      inner += '<div class="field" style="margin:0"><label>Valor R$</label><input type="number" value="'+(p.valor||'')+'" data-field="valor" data-id="'+p.id+'" data-type="ped" step="0.01" class="dyn-input" style="width:100%;background:var(--bg);border:1.5px solid var(--border);color:var(--text);padding:10px;border-radius:8px;font-size:13px;outline:none"></div>';
+      inner += '<div class="field" style="margin:0"><label>Hora</label><input type="time" value="'+(p.hora||'')+'" data-field="hora" data-id="'+p.id+'" data-type="ped" class="dyn-input" style="width:100%;background:var(--bg);border:1.5px solid var(--border);color:var(--text);padding:10px;border-radius:8px;font-size:13px;outline:none"></div>';
+      inner += '</div>';
+      inner += '<div class="field" style="margin:0"><label>Placa identificada?</label>';
+      inner += '<select data-field="placaOk" data-id="'+p.id+'" data-type="ped" class="dyn-input" style="width:100%;background:var(--bg);border:1.5px solid var(--border);color:var(--text);padding:10px;border-radius:8px;font-size:13px;outline:none;-webkit-appearance:none;appearance:none">';
+      inner += '<option value="">Verificar...</option>';
+      inner += '<option value="sim"'+(p.placaOk==='sim'?' selected':'')+'>✅ Sim — placa identificada</option>';
+      inner += '<option value="nao"'+(p.placaOk==='nao'?' selected':'')+'>❌ Não — verificar com Meli</option>';
+      inner += '</select>';
+      if (p.placaOk==='nao') inner += '<div style="font-size:11px;color:var(--red);margin-top:5px;font-weight:600">⚠️ Meli pode não reembolsar!</div>';
+      inner += '</div>';
     } else {
-      h += '<div class="upload-area" onclick="document.getElementById('fPed_'+p.id+'').click()">';
-      h += '<input type="file" accept="image/*" capture="environment" id="fPed_'+p.id+'" onchange="fotoSelecionadaPed(''+p.id+'',this)">';
-      h += '<div class="ico">📷</div><p><strong>Fotografar recibo</strong></p><p style="font-size:11px;margin-top:4px">Claude extrai os dados automaticamente</p></div>';
+      inner += '<div class="field" style="margin:0"><div class="upload-area" data-action="triggerPed" data-id="'+p.id+'">';
+      inner += '<input type="file" accept="image/*" capture="environment" id="fPed_'+p.id+'" data-action="fotoPed" data-id="'+p.id+'">';
+      inner += '<div class="ico">📷</div><p><strong>Fotografar recibo</strong></p></div></div>';
     }
-    h += '</div>';
+    div.innerHTML = inner;
+    container.appendChild(div);
   });
-  document.getElementById('pedagogiosList').innerHTML = h;
 }
 
 function fotoSelecionadaPed(id, input) {
@@ -672,32 +679,35 @@ function calcConsumo(id) {
 }
 
 function renderCombustiveis() {
-  var h='';
-  if(!state.combustiveis.length){ document.getElementById('combustivelList').innerHTML='<p style="font-size:12px;color:var(--text2);text-align:center;padding:12px">Nenhum abastecimento hoje</p>'; return; }
-  state.combustiveis.forEach(function(c,i){
-    h+='<div class="item-box">';
-    h+='<div class="item-box-title">Abastecimento '+(i+1)+(c.posto?' — '+c.posto:'')+'</div>';
-    h+='<button class="del-btn" onclick="delComb(''+c.id+'')">✕</button>';
-    if(c.fotoUrl){
-      h+='<img src="'+c.fotoUrl+'" style="width:100%;max-height:120px;object-fit:cover;border-radius:8px;margin-bottom:10px">';
-      h+='<div class="fg3" style="margin-bottom:8px">';
-      ['litros|Litros|0.000','valorLitro|R$/Litro|0.001','valor|Total R$|0.01'].forEach(function(f){
-        var parts=f.split('|');
-        h+='<div class="field" style="margin:0"><label>'+parts[1]+'</label><input type="number" value="'+(c[parts[0]]||'')+'" onchange="updComb(''+c.id+'',''+parts[0]+'',this.value)" step="'+parts[2]+'" placeholder="0" style="width:100%;background:var(--bg);border:1.5px solid var(--border);color:var(--text);padding:9px;border-radius:8px;font-size:13px;outline:none"></div>';
+  var container = document.getElementById('combustivelList');
+  if (!state.combustiveis.length) { container.innerHTML='<p style="font-size:12px;color:var(--text2);text-align:center;padding:12px">Nenhum abastecimento hoje</p>'; return; }
+  container.innerHTML = '';
+  state.combustiveis.forEach(function(c, i) {
+    var div = document.createElement('div');
+    div.className = 'item-box';
+    var inner = '<div class="item-box-title">Abastecimento '+(i+1)+(c.posto?' — '+c.posto:'')+'</div>';
+    inner += '<button class="del-btn" data-action="delComb" data-id="'+c.id+'">✕</button>';
+    if (c.fotoUrl) {
+      inner += '<img src="'+c.fotoUrl+'" style="width:100%;max-height:120px;object-fit:cover;border-radius:8px;margin-bottom:10px">';
+      inner += '<div class="fg3" style="margin-bottom:8px">';
+      [['litros','Litros','0.001'],['valorLitro','R$/Litro','0.001'],['valor','Total R$','0.01']].forEach(function(f){
+        inner += '<div class="field" style="margin:0"><label>'+f[1]+'</label><input type="number" value="'+(c[f[0]]||'')+'" data-field="'+f[0]+'" data-id="'+c.id+'" data-type="comb" class="dyn-input" step="'+f[2]+'" placeholder="0" style="width:100%;background:var(--bg);border:1.5px solid var(--border);color:var(--text);padding:9px;border-radius:8px;font-size:13px;outline:none"></div>';
       });
-      h+='</div>';
-      h+='<div class="field" style="margin:0"><label>KM do hodômetro agora</label><input type="number" value="'+(c.kmHodometro||'')+'" onchange="updComb(''+c.id+'','kmHodometro',this.value)" placeholder="Anote o KM antes de abastecer" style="width:100%;background:var(--bg);border:1.5px solid var(--border);color:var(--text);padding:10px;border-radius:8px;font-size:14px;font-weight:700;outline:none">';
-      if(c.consumoKmL) h+='<div class="calc">✓ '+c.kmRodados+' km rodados | Consumo: '+c.consumoKmL.toFixed(2)+' km/L | Custo/km: R$ '+(c.valor/c.kmRodados).toFixed(3)+'</div>';
-      h+='</div>';
+      inner += '</div>';
+      inner += '<div class="field" style="margin:0"><label>KM do hodômetro agora</label>';
+      inner += '<input type="number" value="'+(c.kmHodometro||'')+'" data-field="kmHodometro" data-id="'+c.id+'" data-type="comb" class="dyn-input" placeholder="Anote o KM" style="width:100%;background:var(--bg);border:1.5px solid var(--border);color:var(--text);padding:10px;border-radius:8px;font-size:14px;font-weight:700;outline:none">';
+      if (c.consumoKmL) inner += '<div class="calc">✓ '+c.kmRodados+' km | '+c.consumoKmL.toFixed(2)+' km/L | R$ '+(c.valor/c.kmRodados).toFixed(3)+'/km</div>';
+      inner += '</div>';
     } else {
-      h+='<div class="field" style="margin:0;margin-bottom:10px"><label>KM do hodômetro AGORA (antes de abastecer)</label><input type="number" value="'+(c.kmHodometro||'')+'" onchange="updComb(''+c.id+'','kmHodometro',this.value)" placeholder="Registre antes de abastecer" style="width:100%;background:var(--bg);border:2px solid var(--blue);color:var(--text);padding:12px;border-radius:8px;font-size:15px;font-weight:700;outline:none"></div>';
-      h+='<div class="upload-area" onclick="document.getElementById('fComb_'+c.id+'').click()">';
-      h+='<input type="file" accept="image/*" capture="environment" id="fComb_'+c.id+'" onchange="fotoSelecionadaComb(''+c.id+'',this)">';
-      h+='<div class="ico">📄</div><p><strong>Fotografar cupom fiscal</strong></p><p style="font-size:11px;margin-top:4px">Sistema extrai litros, valor/L e total</p></div>';
+      inner += '<div class="field" style="margin:0;margin-bottom:10px"><label>KM do hodômetro AGORA</label>';
+      inner += '<input type="number" value="'+(c.kmHodometro||'')+'" data-field="kmHodometro" data-id="'+c.id+'" data-type="comb" class="dyn-input" placeholder="Registre antes de abastecer" style="width:100%;background:var(--bg);border:2px solid var(--blue);color:var(--text);padding:12px;border-radius:8px;font-size:15px;font-weight:700;outline:none"></div>';
+      inner += '<div class="upload-area" data-action="triggerComb" data-id="'+c.id+'">';
+      inner += '<input type="file" accept="image/*" capture="environment" id="fComb_'+c.id+'" data-action="fotoComb" data-id="'+c.id+'">';
+      inner += '<div class="ico">📄</div><p><strong>Fotografar cupom fiscal</strong></p></div>';
     }
-    h+='</div>';
+    div.innerHTML = inner;
+    container.appendChild(div);
   });
-  document.getElementById('combustivelList').innerHTML=h;
 }
 
 function fotoSelecionadaComb(id,input){
@@ -730,26 +740,27 @@ function addOutro(){
 function delOutro(id){ state.outros=state.outros.filter(function(x){return x.id!==id;}); renderOutros(); }
 function updOutro(id,key,val){ var o=state.outros.find(function(x){return x.id===id;}); if(o) o[key]=key==='valor'?parseFloat(val)||0:val; }
 
-function renderOutros(){
-  if(!state.outros.length){ document.getElementById('outrosList').innerHTML='<p style="font-size:12px;color:var(--text2);text-align:center;padding:12px">Nenhum outro gasto</p>'; return; }
-  var h='';
-  var tipos={manutencao:'Manutenção',pneu:'Pneu',lavagem:'Lavagem',estac:'Estacionamento',outros:'Outros'};
-  state.outros.forEach(function(o){
-    h+='<div class="item-box">';
-    h+='<button class="del-btn" onclick="delOutro(''+o.id+'')">✕</button>';
-    h+='<div class="fg" style="margin-bottom:8px">';
-    h+='<div class="field" style="margin:0"><label>Tipo</label><select onchange="updOutro(''+o.id+'','tipo',this.value)" style="width:100%;background:var(--bg);border:1.5px solid var(--border);color:var(--text);padding:10px;border-radius:8px;font-size:13px;outline:none;-webkit-appearance:none;appearance:none">';
-    Object.keys(tipos).forEach(function(t){ h+='<option value="'+t+'"'+(o.tipo===t?' selected':'')+'>'+tipos[t]+'</option>'; });
-    h+='</select></div>';
-    h+='<div class="field" style="margin:0"><label>Valor R$</label><input type="number" value="'+(o.valor||'')+'" onchange="updOutro(''+o.id+'','valor',this.value)" step="0.01" placeholder="0,00" style="width:100%;background:var(--bg);border:1.5px solid var(--border);color:var(--text);padding:10px;border-radius:8px;font-size:13px;outline:none"></div>';
-    h+='</div>';
-    h+='<div class="field" style="margin:0"><label>Descrição</label><input type="text" value="'+(o.descricao||'')+'" onchange="updOutro(''+o.id+'','descricao',this.value)" placeholder="O que foi?" style="width:100%;background:var(--bg);border:1.5px solid var(--border);color:var(--text);padding:10px;border-radius:8px;font-size:13px;outline:none"></div>';
-    h+='</div>';
+function renderOutros() {
+  var container = document.getElementById('outrosList');
+  if (!state.outros.length) { container.innerHTML='<p style="font-size:12px;color:var(--text2);text-align:center;padding:12px">Nenhum outro gasto</p>'; return; }
+  container.innerHTML = '';
+  var tipos = {manutencao:'Manutenção',pneu:'Pneu',lavagem:'Lavagem',estac:'Estacionamento',outros:'Outros'};
+  state.outros.forEach(function(o) {
+    var div = document.createElement('div');
+    div.className = 'item-box';
+    var inner = '<button class="del-btn" data-action="delOutro" data-id="'+o.id+'">✕</button>';
+    inner += '<div class="fg" style="margin-bottom:8px">';
+    inner += '<div class="field" style="margin:0"><label>Tipo</label><select data-field="tipo" data-id="'+o.id+'" data-type="outro" class="dyn-input" style="width:100%;background:var(--bg);border:1.5px solid var(--border);color:var(--text);padding:10px;border-radius:8px;font-size:13px;outline:none;-webkit-appearance:none;appearance:none">';
+    Object.keys(tipos).forEach(function(t){ inner += '<option value="'+t+'"'+(o.tipo===t?' selected':'')+'>'+tipos[t]+'</option>'; });
+    inner += '</select></div>';
+    inner += '<div class="field" style="margin:0"><label>Valor R$</label><input type="number" value="'+(o.valor||'')+'" data-field="valor" data-id="'+o.id+'" data-type="outro" class="dyn-input" step="0.01" placeholder="0,00" style="width:100%;background:var(--bg);border:1.5px solid var(--border);color:var(--text);padding:10px;border-radius:8px;font-size:13px;outline:none"></div>';
+    inner += '</div>';
+    inner += '<div class="field" style="margin:0"><label>Descrição</label><input type="text" value="'+(o.descricao||'')+'" data-field="descricao" data-id="'+o.id+'" data-type="outro" class="dyn-input" placeholder="O que foi?" style="width:100%;background:var(--bg);border:1.5px solid var(--border);color:var(--text);padding:10px;border-radius:8px;font-size:13px;outline:none"></div>';
+    div.innerHTML = inner;
+    container.appendChild(div);
   });
-  document.getElementById('outrosList').innerHTML=h;
 }
 
-// ── MANUTENÇÃO ───────────────────────────────────────
 function saveManut(){
   var tipo=document.getElementById('manutTipo').value;
   var data=document.getElementById('manutData').value;
@@ -920,90 +931,34 @@ function enviarRelatorio(){
   var resultado=receita-totalDesp;
   var kmL=totalLitros&&kmRodado?kmRodado/totalLitros:0;
   var fR=function(v){return 'R$ '+v.toFixed(2).replace('.',',');};
-  var msg='*VMA LOGÍSTICA — RELATÓRIO DIÁRIO*
-';
-  msg+='Placa: GFB0F57 | '+document.getElementById('data').value+'
-
-';
-  msg+='📍 *'+document.getElementById('destino').value+'*
-';
-  if(kmRodado>0)msg+='🚗 KM rodados: '+kmRodado.toLocaleString()+'
-';
-  if(kmEst)msg+='📋 KM Meli: '+kmEst.toLocaleString()+'
-';
-  if(document.getElementById('pacotes').value)msg+='📦 Pacotes: '+document.getElementById('pacotes').value+'
-';
-  msg+='
-*RECEITA*
-';
-  msg+='Frete Meli ('+kmEst+' km): '+fR(freteMeli)+'
-';
-  if(temAjudante)msg+='Ajudante: '+fR(AJUDANTE_VALOR)+'
-';
-  msg+='Total: '+fR(receita)+'
-';
-  msg+='
-*DESPESAS*
-';
-  msg+='Combustível: '+fR(totalComb)+'
-';
-  msg+='Pedágios ('+state.pedagogios.length+'): '+fR(totalPed)+'
-';
-  if(totalOutros)msg+='Outros: '+fR(totalOutros)+'
-';
-  msg+='Total: '+fR(totalDesp)+'
-';
-  msg+='
-*RESULTADO: '+fR(resultado)+'*
-';
-  msg+='Vagner (60%): '+fR(resultado*0.60)+'
-';
-  msg+='Motorista (40%): '+fR(resultado*0.40)+'
-';
-  if(kmL>0)msg+='
-⛽ Consumo: '+kmL.toFixed(2)+' km/L
-';
+  var nl='\n';
+  var msg='*VMA LOGISTICA - RELATORIO DIARIO*'+nl;
+  msg+='Placa: GFB0F57 | '+document.getElementById('data').value+nl+nl;
+  msg+='Destino: '+document.getElementById('destino').value+nl;
+  if(kmRodado>0)msg+='KM rodados: '+kmRodado.toLocaleString()+nl;
+  if(kmEst)msg+='KM Meli: '+kmEst.toLocaleString()+nl;
+  if(document.getElementById('pacotes').value)msg+='Pacotes: '+document.getElementById('pacotes').value+nl;
+  msg+=nl+'*RECEITA*'+nl;
+  msg+='Frete Meli ('+kmEst+' km): '+fR(freteMeli)+nl;
+  if(temAjudante)msg+='Ajudante: '+fR(AJUDANTE_VALOR)+nl;
+  msg+='Total: '+fR(receita)+nl;
+  msg+=nl+'*DESPESAS*'+nl;
+  msg+='Combustivel: '+fR(totalComb)+nl;
+  msg+='Pedagios ('+state.pedagogios.length+'): '+fR(totalPed)+nl;
+  if(totalOutros)msg+='Outros: '+fR(totalOutros)+nl;
+  msg+='Total: '+fR(totalDesp)+nl;
+  msg+=nl+'*RESULTADO: '+fR(resultado)+'*'+nl;
+  msg+='Vagner (60%): '+fR(resultado*0.60)+nl;
+  msg+='Motorista (40%): '+fR(resultado*0.40)+nl;
+  if(kmL>0)msg+=nl+'Consumo: '+kmL.toFixed(2)+' km/L'+nl;
   var pedNao=state.pedagogios.filter(function(p){return p.placaOk==='nao';});
-  if(pedNao.length)msg+='
-⚠️ ATENÇÃO: '+pedNao.length+' pedágio(s) sem placa identificada!
-';
-  if(document.getElementById('obsGeral').value)msg+='
-Obs: '+document.getElementById('obsGeral').value;
-  // Limpa o dia após enviar
+  if(pedNao.length)msg+=nl+'ATENCAO: '+pedNao.length+' pedagio(s) sem placa!'+nl;
+  if(document.getElementById('obsGeral').value)msg+=nl+'Obs: '+document.getElementById('obsGeral').value;
+  var payload={data:document.getElementById('data').value,motorista:'Motorista',ajudante:document.getElementById('ajudante').value,destino:document.getElementById('destino').value,kmEstimado:kmEst,kmRodado:kmRodado,freteMeli:freteMeli,totalComb:totalComb,totalPed:totalPed,totalOutros:totalOutros,totalDesp:totalDesp,resultado:resultado,vagner60:resultado*0.60,motorista40:resultado*0.40,totalLitros:totalLitros,consumoKmL:kmL,custoPorKm:kmRodado?totalComb/kmRodado:0,pacotes:parseInt(document.getElementById('pacotes').value)||0,pedSemPlaca:pedNao.length,infracao:document.getElementById('infracao').value,obs:document.getElementById('obsGeral').value};
+  try{fetch('https://script.google.com/macros/s/AKfycbwDwnDgNqGHOq54n09VwhDalJ5S_ULSmVwmeTRs8ZslpWG6SATr7Lxm8UoKl7kisjE/exec',{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});}catch(e){}
   state.pedagogios=[]; state.combustiveis=[]; state.outros=[];
   saveState();
-  // Enviar para Google Sheets
-  var payload = {
-    data: document.getElementById('data').value,
-    motorista: 'Motorista',
-    ajudante: document.getElementById('ajudante').value,
-    destino: document.getElementById('destino').value,
-    kmEstimado: kmEst,
-    kmRodado: kmRodado,
-    freteMeli: freteMeli,
-    totalComb: totalComb,
-    totalPed: totalPed,
-    totalOutros: totalOutros,
-    totalDesp: totalDesp,
-    resultado: resultado,
-    vagner60: resultado*0.60,
-    motorista40: resultado*0.40,
-    totalLitros: totalLitros,
-    consumoKmL: kmL,
-    custoPorKm: custKm,
-    pacotes: parseInt(document.getElementById('pacotes').value)||0,
-    pedSemPlaca: pedNao.length,
-    infracao: document.getElementById('infracao').value,
-    obs: document.getElementById('obsGeral').value
-  };
-  try {
-    fetch('https://script.google.com/macros/s/AKfycbwDwnDgNqGHOq54n09VwhDalJ5S_ULSmVwmeTRs8ZslpWG6SATr7Lxm8UoKl7kisjE/exec', {
-      method:'POST', mode:'no-cors',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(payload)
-    });
-  } catch(e){ console.log('Erro ao enviar para sheets:', e); }
-  window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+    window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
   toast('✅ Relatório enviado!');
 }
 
